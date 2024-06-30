@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Algoritma</title>
+</head>
+
+<body>
+  <script>
+    function reverseString(str) {
+
+    const word = str.slice(0, -1); 
+    const number = str.slice(-1);
+    
+    const reverseWord = word.split('').reverse().join('');
+    
+    return reverseWord + number;
+
+  }
+
+    const originalString = "ALUMROF1";
+    const result = reverseString(originalString);
+    document.write("<p>-------Reversed String-------</p>");
+    document.write(result);
+
+    function getlongestWord(sentence) {
+      const word = sentence.split(' ');
+
+      const longestWord = word.reduce((longest, currentWord) => {
+        return currentWord.length > longest.length ? currentWord : longest;
+      }, "");
+
+      return longestWord;
+    }
+
+    const sentence = "The quick brown fox jump over the lazy dog";
+
+    const longestWord = getlongestWord(sentence);
+
+    const text = `Longest word are: ${longestWord} (${longestWord.length} character)`;
+    document.write("<p>-------Longest word-------</p>");
+    document.write(text);
+
+    function countReccurrence(input, query) {
+      return query.map(q => input.filter(word => word === q).length);
+    }
+
+      const input = ['xc', 'dz', 'bbb', 'dz'];
+      const query = ['bbb', 'ac', 'dz'];
+      const output = countReccurrence(input, query);
+      document.write("<p>-------Count recurrence-------</p>");
+      document.write(output);
+
+    function diagonalMatrix(matrix) {
+      let n = matrix.length;
+      let primaryDiagonal = 0;
+      let secondDiagonal = 0;
+
+      for (var i = 0; i < n; i++) {
+        primaryDiagonal += matrix[i][i];
+      }
+
+      for (var i = 0; i < n; i++) {
+        secondDiagonal += matrix[i][n - 1 - i];
+      }
+
+      const difference = Math.abs(primaryDiagonal - secondDiagonal);
+      
+      return difference;
+    }
+
+    const matrix = [
+      [1, 2, 0],
+      [4, 5, 6],
+      [7, 8, 9]
+    ];
+
+    const outputmatrix = diagonalMatrix(matrix);
+
+    document.write("<p>-------Diagonal Matrix-------</p>");
+    document.write(`Result : ${outputmatrix}`);
+
+  </script>
+</body>
+</html>
