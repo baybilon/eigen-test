@@ -17,3 +17,6 @@ listening to : http://localhost:3001/api-docs
 ## License
 
 [ISC](https://www.isc.org/licenses/)
+
+## Algoritma
+[Algoritma](https://github.com/baybilon/eigen-test/tree/main/algoritma)
