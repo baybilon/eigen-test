@@ -30,6 +30,61 @@ const BookModel = require('../models/Book');
 
 /**
  * @swagger
+ * components:
+ *   schemas:
+ *     Borrow:
+ *       type: object
+ *       required:
+ *         - memberCode
+ *         - bookCode
+ *         - entryDate
+ *       properties:
+ *         memberCode:
+ *           type: string
+ *           description: Member code who borrow a book
+ *         bookCode:
+ *           type: string
+ *           description: Book code that borrowed by member
+ *         entryDate:
+ *           type: string
+ *           description: Date member start borrowing
+ *         returnDate:
+ *           type: string
+ *           description: Date member must return the book
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Return:
+ *       type: object
+ *       required:
+ *         - memberCode
+ *         - bookCode
+ *         - returnDate
+ *         - returnedDate
+ *         - status
+ *       properties:
+ *         memberCode:
+ *           type: string
+ *           description: Member code who return a book
+ *         bookCode:
+ *           type: string
+ *           description: Book code that returned by member
+ *         returnDate:
+ *           type: string
+ *           description: Date member must retruning the book
+ *         returnedDate:
+ *           type: string
+ *           description: Date member returning the book
+ *         status:
+ *           type: string
+ *           description: Member status that currently being penalty
+ */
+
+/**
+ * @swagger
  * tags:
  *   name: Books
  *   description: Book managing API
@@ -71,6 +126,19 @@ const BookModel = require('../models/Book');
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Book'
+ *       500:
+ *         description: Some server error
+ */
+
+/**
+ * @swagger
+ *   /countBook:
+ *   get:
+ *     summary: Count a books being borrowed by each member
+ *     tags: [Books]
+ *     responses:
+ *       200:
+ *         description: The number of books being borrowed by each member
  *       500:
  *         description: Some server error
  */
@@ -124,7 +192,7 @@ const BookModel = require('../models/Book');
  * @swagger
  * /return:
  *  post:
- *    summary: Entry a new borrowed book
+ *    summary: Entry a new returned book
  *    tags: [Returning]
  *    description: Borrow a book
  *    requestBody:

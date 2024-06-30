@@ -15,11 +15,6 @@ app.use(express.json())
 
 const PORT = process.env.PORT;
 
-let books = [];
-let members = [];
-let borrowedBooks = [];
-let penalties = [];
-
 const swaggerOptions = {
     swaggerDefinition: {
         openapi: '3.0.0',
@@ -75,7 +70,7 @@ app.post('/addMember', async(req, res) => {
 
 app.get('/books', async (req, res) => {
     try {
-      const books = await BookModel.find();
+      const books = await BookModel.find({stock: {$gt: 0}});
       res.json(books);
     } catch (err) {
       res.status(500).json({ message: err.message });
@@ -99,25 +94,6 @@ app.post('/addBook', async(req, res) => {
 //     }
 // });
 
-app.get('/getname', async(req, res) =>{
-    // try{
-    //   const members = await MemberModel.find({code: {$eq: req.body.code}})
-    //   members.map(member => member.name)
-    //   res.json(members);
-    //   // console.log(res.json(members))
-    // }
-    // catch(err){
-    //     console.log(err.message);
-    // }
-    
-    try{
-      const query = await MemberModel.find({code: {$eq: req.body.code}}).select('name -_id');
-      res.json(query);
-    }
-    catch(err){
-      console.log(err.message);
-    }
-})
 
 app.post('/borrow', async(req, res) => {
     
@@ -133,18 +109,15 @@ app.post('/borrow', async(req, res) => {
       return res.status(404).json({ message: 'Book not found' });
     }
 
-    const borrowedByMember = await BorrowModel.countDocuments({memberCode: memberCode});
+    const borrowedByMember = await BorrowModel.find({memberCode: memberCode}).count();
     if (borrowedByMember >= 2) {
       return res.status(400).json({ message: 'Member cannot borrow more than 2 books' });
     }
 
-    // const penalty = await ReturnModel.find({ memberCode: memberCode, status: "banned" });
-    // if (penalty){
-    //   return res.status(400).json({ message: 'Member is banned, available to borrow after 3 days' });
-    // }
-
-
-    // const allowed = await ReturnModel.find({ memberCode: memberCode, status: "banned" });
+    const penalty = await ReturnModel.findOne({memberCode: memberCode, status: "banned"});
+    if (penalty){
+      return res.status(400).json({ message: 'Member is banned, available to borrow after 3 days' });
+    }
 
     if(book.stock <= 0){
       return res.status(400).json({ message: 'Book out of stock' });
@@ -161,8 +134,7 @@ app.post('/borrow', async(req, res) => {
         if (!updatedBook) {
           return res.status(404).send({ message: 'Book not found' });
         }
-  
-        // Send the updated book information as a response
+
         res.status(200).send(updatedBook);
   
         // borrowedBooks.push({ memberCode, bookCode });
@@ -176,19 +148,14 @@ app.post('/borrow', async(req, res) => {
 
   });
 
-
-  app.post('/count', async (req, res) => {
-    const { memberCode, bookCode } = req.body;
+  app.post('/find', async (req, res) => {
+    const { memberCode } = req.body;
 
     try {
-      // const member = await MemberModel.findOne({ code: memberCode });
-      // const book = await BookModel.findOne({ code: bookCode });
-
-      const borrowedByMember = await BorrowModel.countDocuments({memberCode: memberCode});
-      // res.json(borrowedByMember);
+    const banned = await ReturnModel.findOne({memberCode: memberCode, status: "banned"});
   
-      if (borrowedByMember >= 2) {
-        res.status(200).json({ message: 'Member cannot borrow more than 2 books' });
+      if (banned.status === "banned") {
+        res.status(200).json({ message: 'Member banned' });
       }
 
     }
@@ -197,105 +164,66 @@ app.post('/borrow', async(req, res) => {
     }
 
   });
-  app.get('/date', async (req, res) => {
-    const { memberCode } = req.body;
 
-    const penalty = await ReturnModel.find({memberCode: memberCode});
-    const returnedDates = penalty.map(record => record.returnedDate)
-    const dates = returnedDates;
-    // console.log(dates)
-    // return res.json(dates)
+  app.get('/countBook', async (req, res) => {
 
-    // const returnedDate = penalty.returnedDate;
-
-    const allowdate = new Date(dates);
-    allowdate.setDate(allowdate.getDate() + 3);
-    // console.log(allowdate)
-    // return res.json(allowdate)
-
-    const d1 = new Date(dates)
-    const d2 = new Date(allowdate)
-
-    // const diff = penalty.returnedDate.setDate(getDate() + 3) 
-    
-    if (d1 > d2){
-      // return res.json({ message: 'Member can borrow' });
-      
-    }
-
-  })
-
-  app.post('/api/borrow', async (req, res) => {
-    const { memberCode, bookCode } = req.body;
-  
     try {
-      const member = await MemberModel.findOne({ code: memberCode });
-      const book = await BookModel.findOne({ code: bookCode });
+        const borrowedBook = await BorrowModel.aggregate([ 
   
-      if (!member) {
-        return res.status(404).json({ message: 'Member not found' });
-      }
-  
-      if (!book) {
-        return res.status(404).json({ message: 'Book not found' });
-      }
-  
-      const borrowedByMember = BorrowModel.count({memberCode: memberCode});
-  
-      if (borrowedByMember.length >= 2) {
-        return res.status(400).json({ message: 'Member cannot borrow more than 2 books' });
-      }
-  
-      const isBookBorrowed = BorrowModel.some({bookCode: bookCode});
-  
-      if (isBookBorrowed) {
-        return res.status(400).json({ message: 'Book is already borrowed by another member' });
-      }
-  
-      const isPenalized = penalties.some(p => p.memberCode === memberCode);
-  
-      if (isPenalized) {
-        return res.status(400).json({ message: 'Member is currently penalized' });
-      }
-  
-      if (book.stock <= 0) {
-        return res.status(400).json({ message: 'No stock available for this book' });
-      }
-  
-      book.stock -= 1;
-      await book.save();
-      borrowedBooks.push({ memberCode, bookCode });
-  
-      res.json({ message: 'Book borrowed successfully' });
-    } catch (error) {
+        {
+          $group: {
+            _id: '$memberCode', totalbook : { $sum: 1}
+          }
+        }
+
+        ])
+        res.json(borrowedBook);
+    }
+    catch (error) {
       res.status(500).json({ message: 'Server error', error });
     }
+
   });
+
+app.post('/pen', async(req, res) => {
+  const { memberCode,bookCode } = req.body;
+  
+  try{
+    const member = await BorrowModel.findOne({memberCode: memberCode, bookCode: bookCode});
+    // res.json(member.returnDate)
+
+    const d1 = member.returnDate;
+    const d2 = new Date();
+
+    if(d1 < d2){
+      return res.status(400).json({ message: 'telat' });
+    }
+
+  }
+  catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+})
+
 
 app.post('/return', async(req, res) => {
 
   const { memberCode, bookCode } = req.body;
 
-  const member = await BorrowModel.find({code: memberCode});
-  const book = await BorrowModel.find({code: bookCode});
-    
-  if (!member) {
-    return res.status(404).json({ message: 'Member not found' });
-  }
-
-  if (!book) {
-    return res.status(404).json({ message: 'Book not found' });
-  }
-
   try{
-    let penalty;
-    if(member.returnDate > Date()){
-      return res.json({message: "banned"});
-      penalty = "banned";
+    const returns = await BorrowModel.find({memberCode: memberCode, bookCode: bookCode});
+
+    if (!returns) {
+      return res.status(404).json({ message: 'Member or book not found' });
     }
 
-    else{
-      penalty = "";
+    const d1 = returns.returnDate;
+    const d2 = new Date();
+
+    let penalty;
+
+    if(d1 < d2){
+      return penalty = "banned";
     }
     
     const returning = ReturnModel.create({
@@ -315,7 +243,6 @@ app.post('/return', async(req, res) => {
       return res.status(404).send({ message: 'Book not found' });
     }
 
-    // Send the updated book information as a response
     res.status(200).send(updatedBook);
 
     // borrowedBooks.push({ memberCode, bookCode });
@@ -330,5 +257,5 @@ app.post('/return', async(req, res) => {
 })
   
 app.listen(process.env.PORT, () =>{
-    console.log("Server is established");
+    console.log(`Server is established http://localhost:${PORT}/api-docs`);
 })
